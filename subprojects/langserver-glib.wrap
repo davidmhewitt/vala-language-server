@@ -1,0 +1,5 @@
+[wrap-git]
+directory=langserver-glib
+url=https://github.com/davidmhewitt/langserver-glib.git
+revision=head
+push-url=git@github.com:davidmhewitt/langserver-glib.git
