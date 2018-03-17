@@ -14,8 +14,7 @@ vala_dep = dependency(vala_name)
 
 posix_dep = meson.get_compiler('vala').find_library('posix')
 
-langserver_glib = subproject ('langserver-glib')
-langserver_dep = langserver_glib.get_variable ('langserver_dep')
+langserver_dep = dependency('langserver_glib', fallback : ['langserver-glib', 'langserver_dep'])
 
 dependencies = [
     dependency('glib-2.0'),
