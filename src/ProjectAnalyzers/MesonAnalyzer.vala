@@ -66,7 +66,7 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
 
         Bytes output;
 
-        var proc = meson.spawnv ({ "meson", "introspect", "--targets"});
+        var proc = meson.spawnv ({ "meson", "introspect", "--targets", "."});
         var pipe = proc.get_stdout_pipe ();
         yield proc.communicate_async (null, null, out output, null);
 
@@ -87,7 +87,7 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
         string? target_name = null;
 
         foreach (var target in target_list) {
-            proc = meson.spawnv ({ "meson", "introspect", "--target-files", target });
+            proc = meson.spawnv ({ "meson", "introspect", "--target-files", target, "." });
             pipe = proc.get_stdout_pipe ();
             yield proc.communicate_async (null, null, out output, null);
 
