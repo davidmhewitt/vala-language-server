@@ -98,6 +98,12 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
             files.get_array ().foreach_element ((arr, i, element) => {
                 var filename = element.get_string ();
                 var abs_path = Path.build_filename (root_path, filename);
+                var abs_file = File.new_for_path (abs_path);
+                if (!abs_file.query_exists ()) {
+                    abs_path = Path.build_filename (meson_build_root, filename);
+                    abs_file = File.new_for_path (abs_path);
+                }
+                
                 var abs_uri = File.new_for_path (abs_path).get_uri ();
                 if (abs_uri == pivot_file) {
                     target_name = target;
