@@ -27,8 +27,10 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
             return _pivot_file;
         }
         set {
-            _pivot_file = value;
-            scan_cmake_files.begin ();
+            if (_pivot_file != value) {
+                _pivot_file = value;
+                scan_cmake_files.begin ();
+            }
         }
     }
 
@@ -94,18 +96,18 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
         }
     }
 
-    private void parse_build_file (File build_file) {        
+    private void parse_build_file (File build_file) {
         var dis = new DataInputStream (build_file.read ());
         string line;
-        
+
         bool all_source_files_parsed = false;
         bool pivot_file_found = false;
-        
+
         var deps = new Gee.ArrayList<string> ();
         var build_files = new Gee.ArrayList<string> ();
-        
+
         var package_regex = new Regex ("""--pkg=(.+?)(?:$| |>|<)""");
-        
+
         while ((line = dis.read_line (null)) != null) {
             if (line.contains ("valac ")) {
                 string[] parts = line.split (" ");
@@ -113,23 +115,23 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
                     if (parts[i] == null) {
                         continue;
                     }
-                    
+
                     if (parts[i].has_prefix ("-")) {
                         MatchInfo info;
                         if (package_regex.match (parts[i], 0, out info)) {
                             deps.add (info.fetch (1));
                         }
-                        
+
                         all_source_files_parsed = true;
                     }
-                    
+
                     if (!all_source_files_parsed) {
                         var source_file = File.new_for_path (parts[i]);
                         var uri = source_file.get_uri ();
                         if (source_file.query_exists ()) {
                             build_files.add (uri);
                         }
-                        
+
                         if (uri == pivot_file) {
                             pivot_file_found = true;
                         }
@@ -137,7 +139,7 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
                 }
             }
         }
-        
+
         if (pivot_file_found) {
             dependencies_updated (deps);
             build_files_updated (build_files);

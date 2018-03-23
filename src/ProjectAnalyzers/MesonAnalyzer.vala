@@ -27,8 +27,10 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
             return _pivot_file;
         }
         set {
-            _pivot_file = value;
-            introspect_target_files.begin ();
+            if (_pivot_file != value) {
+                _pivot_file = value;
+                introspect_target_files.begin ();
+            }
         }
     }
 
@@ -103,7 +105,7 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
                     abs_path = Path.build_filename (meson_build_root, filename);
                     abs_file = File.new_for_path (abs_path);
                 }
-                
+
                 var abs_uri = File.new_for_path (abs_path).get_uri ();
                 if (abs_uri == pivot_file) {
                     target_name = target;

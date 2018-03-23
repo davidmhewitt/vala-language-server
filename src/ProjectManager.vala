@@ -110,15 +110,21 @@ public class Vls.ProjectManager : Object {
     }
 
     public void rebuild_context () {
+        var files_copy = new Gee.HashMap<string, Vala.SourceFile> ();
+        files_copy.set_all (files);
+
+        var deps_copy = new Gee.HashSet<string> ();
+        deps_copy.add_all (dependencies);
+
         if (current_compile_job == null) {
-            current_compile_job = new CompileJob (root_uri, files, dependencies);
+            current_compile_job = new CompileJob (root_uri, files_copy, deps_copy);
             current_compile_job.execute.begin ((obj, res) => {
                 var diags = current_compile_job.execute.end (res);
                 handle_diagnostics (diags);
                 handle_job_finished ();
             });
         } else {
-            next_compile_job = new CompileJob (root_uri, files, dependencies);
+            next_compile_job = new CompileJob (root_uri, files_copy, deps_copy);
             current_compile_job.cancel ();
         }
     }
