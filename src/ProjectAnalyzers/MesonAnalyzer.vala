@@ -122,8 +122,15 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
         if (target_name != null) {
             build_files_updated (current_file_list);
 
-            var target_regex = new Regex ("""valac.*--directory.*?\/(\S+)""");
-            var dep_regex = new Regex ("""--pkg (\S+)""");
+            Regex target_regex, dep_regex;
+            try {
+                target_regex = new Regex ("""valac.*--directory.*?\/(\S+)""");
+                dep_regex = new Regex ("""--pkg (\S+)""");
+            } catch (Error e) {
+                warning ("Unable to create regexes for parsing compile_commands.json, bailing out: %s", e.message);
+                return;
+            }
+
             var commands_file = File.new_for_path (Path.build_filename (meson_build_root, "compile_commands.json"));
 
             if (commands_file.query_exists ()) {

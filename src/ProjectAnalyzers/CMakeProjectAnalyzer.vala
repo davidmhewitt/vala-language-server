@@ -57,7 +57,12 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
         var tmp_dir = Environment.get_tmp_dir ();
         cmake_build_root = Path.build_filename (tmp_dir, "vls-build-" + new DateTime.now_local ().to_string ());
         var folder = File.new_for_path (cmake_build_root);
-        folder.make_directory ();
+        try {
+            folder.make_directory ();
+        } catch (Error e) {
+            warning ("Failed to create temporary directory for CMake, build analysis will probably fail: %s", e.message);
+            return;
+        }
 
         var cmake = new SubprocessLauncher (SubprocessFlags.STDOUT_SILENCE);
         cmake.set_cwd (cmake_build_root);
@@ -97,7 +102,15 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
     }
 
     private void parse_build_file (File build_file) {
-        var dis = new DataInputStream (build_file.read ());
+        DataInputStream dis;
+
+        try {
+            dis = new DataInputStream (build_file.read ());
+        } catch (Error e) {
+            warning ("Unable to read build.make file, build analysis will probably fail: %s", e.message);
+            return;
+        }
+
         string line;
 
         bool all_source_files_parsed = false;
@@ -106,7 +119,13 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
         var deps = new Gee.ArrayList<string> ();
         var build_files = new Gee.ArrayList<string> ();
 
-        var package_regex = new Regex ("""--pkg=(.+?)(?:$| |>|<)""");
+        Regex package_regex;
+        try {
+            package_regex = new Regex ("""--pkg=(.+?)(?:$| |>|<)""");
+        } catch (Error e) {
+            warning ("Error creating regex to parse build.make, build analysis will probably fail: %s", e.message);
+            return;
+        }
 
         while ((line = dis.read_line (null)) != null) {
             if (line.contains ("valac ")) {
