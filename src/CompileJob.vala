@@ -193,29 +193,11 @@ public class Vls.CompileJob {
             };
         }
 
-        var start_line = err.location.begin.line - 1;
-        if (start_line < 0) start_line = 0;
-
-        var start_char = err.location.begin.column - 1;
-        if (start_char < 0) start_char = 0;
-
-        var end_line = err.location.end.line - 1;
-        if (end_line < 0) end_line = 0;
-
         var diagnostic = new LanguageServer.Types.Diagnostic () {
             severity = severity,
             source = "VLS",
             message = err.message,
-            range = new LanguageServer.Types.Range () {
-                start = new LanguageServer.Types.Position () {
-                    line = start_line,
-                    character = start_char
-                },
-                end = new LanguageServer.Types.Position () {
-                    line = end_line,
-                    character = err.location.end.column
-                }
-            }
+            range = Utils.vala_ref_to_lsp_range (err.location)
         };
 
         diagnostics[err.location.file.filename].diagnostics.add (diagnostic);

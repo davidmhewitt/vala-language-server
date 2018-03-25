@@ -200,11 +200,16 @@ public class Vls.ProjectManager : Object {
         foreach (var file in new_files) {
             if (!versions.has_key (file)) {
                 debug ("adding %s", file);
-                versions[file] = 1;
                 var new_file = File.new_for_uri (file);
                 uint8[] contents;
-                new_file.load_contents (null, out contents, null);
+                try {
+                    new_file.load_contents (null, out contents, null);
+                } catch (Error e) {
+                    warning ("Error loading new file %s", e.message);
+                    continue;
+                }
 
+                versions[file] = 1;                
                 var vala_file = new Vala.SourceFile (context, Vala.SourceFileType.SOURCE, file, (string)contents);
                 files[file] = vala_file;
             }
@@ -232,16 +237,7 @@ public class Vls.ProjectManager : Object {
                         if (ma.symbol_reference != null) {
                             var position = new LanguageServer.Types.Location () {
                                 uri = ma.symbol_reference.source_reference.file.filename,
-                                range = new LanguageServer.Types.Range () {
-                                    start = new LanguageServer.Types.Position () {
-                                        line = ma.symbol_reference.source_reference.begin.line - 1,
-                                        character = ma.symbol_reference.source_reference.begin.column - 1
-                                    },
-                                    end = new LanguageServer.Types.Position () {
-                                        line = ma.symbol_reference.source_reference.end.line - 1,
-                                        character = ma.symbol_reference.source_reference.end.column
-                                    }
-                                }
+                                range = Utils.vala_ref_to_lsp_range (ma.symbol_reference.source_reference)
                             };
 
                             return position;
