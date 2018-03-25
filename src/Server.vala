@@ -22,7 +22,8 @@ public class Vls.Server : LanguageServer.Server {
 
     public Server () {
         Object (
-            supports_document_formatting: true
+            supports_document_formatting: true,
+            supports_goto_definition: true
         );
     }
 
@@ -39,8 +40,12 @@ public class Vls.Server : LanguageServer.Server {
         manager.handle_document_changes (params);
     }
 
-    protected override Gee.ArrayList<LanguageServer.Types.TextEdit> format_document (LanguageServer.Types.DocumentFormattingParams params) {
+    protected override Gee.ArrayList<LanguageServer.Types.TextEdit>? format_document (LanguageServer.Types.DocumentFormattingParams params) {
         return manager.format_document (params.textDocument.uri);
+    }
+
+    protected override LanguageServer.Types.Location? get_definition (LanguageServer.Types.TextDocumentPositionParams params) {
+        return manager.get_definition (params.textDocument, params.position);
     }
 
     protected override void cleanup () {

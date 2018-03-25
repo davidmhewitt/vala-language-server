@@ -200,7 +200,7 @@ public class Vls.ProjectManager : Object {
         foreach (var file in new_files) {
             if (!versions.has_key (file)) {
                 debug ("adding %s", file);
-                versions[file] = int.MIN;
+                versions[file] = 1;
                 var new_file = File.new_for_uri (file);
                 uint8[] contents;
                 new_file.load_contents (null, out contents, null);
@@ -211,6 +211,48 @@ public class Vls.ProjectManager : Object {
         }
 
         rebuild_context ();
+    }
+
+    public LanguageServer.Types.Location? get_definition (LanguageServer.Types.TextDocumentIdentifier doc, LanguageServer.Types.Position pos) {
+        if (files.has_key (doc.uri)) {
+            var file = files[doc.uri];
+            var finder = new ValaFindNode (file, pos);
+
+            foreach (var node in finder.results) {
+                if (node is Vala.Comment || node is Vala.IfStatement || node is Vala.Literal) {
+                    continue;
+                }
+
+                if (node is Vala.MethodCall) {
+                    var call = node as Vala.MethodCall;
+
+                    if (call.call is Vala.MemberAccess) {
+                        var ma = (Vala.MemberAccess)call.call;
+
+                        if (ma.symbol_reference != null) {
+                            var position = new LanguageServer.Types.Location () {
+                                uri = ma.symbol_reference.source_reference.file.filename,
+                                range = new LanguageServer.Types.Range () {
+                                    start = new LanguageServer.Types.Position () {
+                                        line = ma.symbol_reference.source_reference.begin.line - 1,
+                                        character = ma.symbol_reference.source_reference.begin.column - 1
+                                    },
+                                    end = new LanguageServer.Types.Position () {
+                                        line = ma.symbol_reference.source_reference.end.line - 1,
+                                        character = ma.symbol_reference.source_reference.end.column
+                                    }
+                                }
+                            };
+
+                            return position;
+                        }
+                    }
+                }
+            }
+        } else {
+            debug ("no key for %s", doc.uri);
+        }
+        return null;
     }
 
     public Gee.ArrayList<LanguageServer.Types.TextEdit> format_document (string uri) {
