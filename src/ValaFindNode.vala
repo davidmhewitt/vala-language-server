@@ -38,10 +38,6 @@ public class Vls.ValaFindNode : Vala.CodeVisitor {
             return false;
         }
 
-        if (node is Vala.Comment || node is Vala.IfStatement) {
-            return false;
-        }
-
         if (sr.begin.line == sr.end.line && (pos.character > sr.begin.column || pos.character < sr.end.column)) {
             return true;
         }
