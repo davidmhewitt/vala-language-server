@@ -20,8 +20,9 @@
 public class Vls.Server : LanguageServer.Server {
     private ProjectManager manager;
 
-    public Server () {
+    public Server (bool test_mode = false) {
         Object (
+            file_pipes: test_mode,
             supports_document_formatting: true,
             supports_goto_definition: true
         );

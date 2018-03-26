@@ -22,17 +22,39 @@ public class Vls.Application : Object {
     private int exit_code = 0;
     private Server server;
 
-    construct {
+    public int run (string[] args) {
+        bool test_mode = false;
+        bool debug = false;
+
+        OptionEntry[] options = new OptionEntry[2];
+        options[0] = { "test-mode", 0, 0, OptionArg.NONE, ref test_mode, "Use files in /tmp for JSONRPC  instead of stdin/stdout", null };
+        options[1] = { "debug", 0, 0, OptionArg.NONE, ref debug, "Extra logging", null };
+
+        string*[] _args = new string[args.length];
+        for (int i = 0; i < args.length; i++) {
+            _args[i] = args[i];
+        }
+
+        try {
+            var opt_context = new OptionContext ("- OptionContext example");
+            opt_context.set_help_enabled (true);
+            opt_context.add_main_entries (options, null);
+            unowned string[] tmp = _args;
+            opt_context.parse (ref tmp);
+        } catch (OptionError e) {
+            stdout.printf ("error: %s\n", e.message);
+            stdout.printf ("Run '%s --help' to see a full list of available command line options.\n", args[0]);
+            return 0;
+        }
+
         loop = new MainLoop ();
 
-        server = new Server ();
+        server = new Server (test_mode);
         server.exit.connect ((code) => {
             exit_code = code;
             loop.quit ();
         });
-    }
 
-    public int run (string[] args) {
         loop.run ();
         return exit_code;
     }
