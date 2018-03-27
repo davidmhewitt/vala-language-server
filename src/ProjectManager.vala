@@ -25,6 +25,7 @@ public class Vls.ProjectManager : Object {
     private Gee.HashMap<string, Vala.SourceFile> files;
     private Gee.HashMap<string, int> versions;
     private Gee.HashSet<string> dependencies;
+    private Gee.HashSet<string> published_diagnostics;
 
     private ProjectAnalyzer build_system;
     private Vala.CodeContext context;
@@ -38,6 +39,7 @@ public class Vls.ProjectManager : Object {
         versions = new Gee.HashMap<string, int> ();
         context = new Vala.CodeContext ();
         dependencies = new Gee.HashSet<string> ();
+        published_diagnostics = new Gee.HashSet<string> ();
         dependencies.add ("glib-2.0");
         dependencies.add ("gobject-2.0");
 
@@ -148,13 +150,14 @@ public class Vls.ProjectManager : Object {
             return;
         }
 
-        foreach (var file in files.keys) {
-            if (!diagnostics.has_key (file)) {
-                clear_diagnostics (file);
-            }
+        foreach (var file in published_diagnostics) {
+            clear_diagnostics (file);
         }
 
+        published_diagnostics.clear ();
+
         foreach (var diag in diagnostics.values) {
+            published_diagnostics.add (diag.uri);
             publish_diagnostics (diag);
         }
     }
@@ -209,7 +212,7 @@ public class Vls.ProjectManager : Object {
                     continue;
                 }
 
-                versions[file] = 1;                
+                versions[file] = 1;
                 var vala_file = new Vala.SourceFile (context, Vala.SourceFileType.SOURCE, file, (string)contents);
                 files[file] = vala_file;
             }
