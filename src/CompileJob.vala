@@ -71,6 +71,7 @@ public class Vls.CompileJob {
             foreach (var file in files.values) {
                 if (cancellable.is_cancelled ()) {
                     debug ("dropping compile");
+                    cleanup_context (context);
                     output = null;
                     Idle.add ((owned) callback);
                     return true;
@@ -106,7 +107,7 @@ public class Vls.CompileJob {
             }
 
             if (context.report.get_errors () > 0) {
-                Vala.CodeContext.pop ();
+                cleanup_context (context);
                 output = generate_diagnostics (reporter);
                 Idle.add((owned) callback);
                 return true;
@@ -114,6 +115,7 @@ public class Vls.CompileJob {
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
+                cleanup_context (context);
                 output = null;
                 Idle.add ((owned) callback);
                 return true;
@@ -125,7 +127,7 @@ public class Vls.CompileJob {
 
             if (context.report.get_errors () > 0) {
                 debug ("errors in parse");
-                Vala.CodeContext.pop ();
+                cleanup_context (context);
                 output = generate_diagnostics (reporter);
                 Idle.add((owned) callback);
                 return true;
@@ -133,6 +135,7 @@ public class Vls.CompileJob {
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
+                cleanup_context (context);
                 output = null;
                 Idle.add ((owned) callback);
                 return true;
@@ -142,8 +145,7 @@ public class Vls.CompileJob {
 
             output = generate_diagnostics (reporter);
 
-            Vala.CodeContext.pop ();
-
+            cleanup_context (context);
             Idle.add((owned) callback);
             return true;
         };
@@ -152,6 +154,12 @@ public class Vls.CompileJob {
 
         yield;
         return output;
+    }
+
+    private static void cleanup_context (Vala.CodeContext context) {
+        context.get_source_files ().clear ();
+        context.get_packages ().clear ();
+        Vala.CodeContext.pop ();
     }
 
     private Gee.HashMap<string, LanguageServer.Types.PublishDiagnosticsParams> generate_diagnostics (Reporter report) {

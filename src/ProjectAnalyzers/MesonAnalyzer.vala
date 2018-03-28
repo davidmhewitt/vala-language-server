@@ -154,7 +154,11 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
                         do {
                             debug (info.fetch (1));
                             deps.add (info.fetch (1));
-                            info.next ();
+                            try {
+                                info.next ();
+                            } catch (Error e) {
+                                warning ("Error parsing dependencies, build may not work properly: %s", e.message);
+                            }
                         } while (info.matches ());
 
                         dependencies_updated (deps);
