@@ -123,12 +123,6 @@ public class Vls.CompileJob {
             var parser = new Vala.Parser ();
             parser.parse (context);
 
-    		var genie_parser = new Vala.Genie.Parser ();
-    		genie_parser.parse (context);
-
-    		var gir_parser = new Vala.GirParser ();
-            gir_parser.parse (context);
-
             if (context.report.get_errors () > 0) {
                 debug ("errors in parse");
                 Vala.CodeContext.pop ();

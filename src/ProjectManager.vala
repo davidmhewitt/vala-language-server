@@ -28,7 +28,6 @@ public class Vls.ProjectManager : Object {
     private Gee.HashSet<string> published_diagnostics;
 
     private ProjectAnalyzer build_system;
-    private Vala.CodeContext context;
 
     private CompileJob? current_compile_job = null;
     private CompileJob? next_compile_job = null;
@@ -37,7 +36,6 @@ public class Vls.ProjectManager : Object {
         debug ("Project manager initializing with %s", root_uri);
         files = new Gee.HashMap<string, Vala.SourceFile> ();
         versions = new Gee.HashMap<string, int> ();
-        context = new Vala.CodeContext ();
         dependencies = new Gee.HashSet<string> ();
         published_diagnostics = new Gee.HashSet<string> ();
         dependencies.add ("glib-2.0");
@@ -73,7 +71,7 @@ public class Vls.ProjectManager : Object {
                 debug ("Adding new file %s", item.uri);
                 versions[item.uri] = item.number;
 
-                var file = new Vala.SourceFile (context, Vala.SourceFileType.SOURCE, item.uri, item.text);
+                var file = new Vala.SourceFile (new Vala.CodeContext (), Vala.SourceFileType.SOURCE, item.uri, item.text);
                 files[item.uri] = file;
             }
         }
@@ -97,7 +95,8 @@ public class Vls.ProjectManager : Object {
                 debug ("change in array");
                 if (change.range == null) {
                     // The client has sent the full file
-                    var file = new Vala.SourceFile (context, Vala.SourceFileType.SOURCE, uri, change.text);
+                    files[uri].get_nodes ().clear ();
+                    var file = new Vala.SourceFile (new Vala.CodeContext (), Vala.SourceFileType.SOURCE, uri, change.text);
                     files[uri] = file;
                 } else {
                     debug ("thought this was incremental");
@@ -213,7 +212,7 @@ public class Vls.ProjectManager : Object {
                 }
 
                 versions[file] = 1;
-                var vala_file = new Vala.SourceFile (context, Vala.SourceFileType.SOURCE, file, (string)contents);
+                var vala_file = new Vala.SourceFile (new Vala.CodeContext (), Vala.SourceFileType.SOURCE, file, (string)contents);
                 files[file] = vala_file;
             }
         }
@@ -260,7 +259,7 @@ public class Vls.ProjectManager : Object {
         if (files.has_key (uri)) {
             var file = files[uri];
 
-            context = new Vala.CodeContext ();
+            var context = new Vala.CodeContext ();
 
             Vala.CodeContext.push (context);
             context.report = new Reporter ();
