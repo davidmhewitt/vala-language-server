@@ -134,7 +134,14 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
             var commands_file = File.new_for_path (Path.build_filename (meson_build_root, "compile_commands.json"));
 
             if (commands_file.query_exists ()) {
-                var dis = new DataInputStream (commands_file.read ());
+                DataInputStream dis;
+                try {
+                    dis = new DataInputStream (commands_file.read ());
+                } catch (Error e) {
+                    warning ("Could not parse compile_commands.json, bailing out: %s", e.message);
+                    return;
+                }
+
                 string line;
                 bool target_found = false;
                 while ((line = dis.read_line (null)) != null) {

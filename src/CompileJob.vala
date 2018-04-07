@@ -56,14 +56,14 @@ public class Vls.CompileJob {
             }
 
             for (int i = 2; i <= 40; i += 2) {
-    			context.add_define ("VALA_0_%d".printf (i));
-    		}
+                context.add_define ("VALA_0_%d".printf (i));
+            }
 
-    		context.target_glib_major = 2;
-    		context.target_glib_minor = 40;
+            context.target_glib_major = 2;
+            context.target_glib_minor = 40;
 
-    		for (int i = 16; i <= 40; i += 2) {
-    			context.add_define ("GLIB_2_%d".printf (i));
+            for (int i = 16; i <= 40; i += 2) {
+                context.add_define ("GLIB_2_%d".printf (i));
             }
 
             context.nostdpkg = false;
@@ -141,7 +141,63 @@ public class Vls.CompileJob {
                 return true;
             }
 
-            context.check ();
+            context.resolver.resolve (context);
+
+            if (context.report.get_errors () > 0) {
+                debug ("errors in symbol resolving");
+                cleanup_context (context);
+                output = generate_diagnostics (reporter);
+                Idle.add((owned) callback);
+                return true;
+            }
+
+            if (cancellable.is_cancelled ()) {
+                debug ("dropping compile");
+                cleanup_context (context);
+                output = null;
+                Idle.add ((owned) callback);
+                return true;
+            }
+
+            context.analyzer.analyze (context);
+
+            if (context.report.get_errors () > 0) {
+                debug ("errors in analysis");
+                cleanup_context (context);
+                output = generate_diagnostics (reporter);
+                Idle.add((owned) callback);
+                return true;
+            }
+
+            if (cancellable.is_cancelled ()) {
+                debug ("dropping compile");
+                cleanup_context (context);
+                output = null;
+                Idle.add ((owned) callback);
+                return true;
+            }
+
+#if HAVE_LIBVALA_042
+            context.flow_analyzer.analyze (context);
+
+            if (context.report.get_errors () > 0) {
+                debug ("errors in flow analysis");
+                cleanup_context (context);
+                output = generate_diagnostics (reporter);
+                Idle.add((owned) callback);
+                return true;
+            }
+
+            if (cancellable.is_cancelled ()) {
+                debug ("dropping compile");
+                cleanup_context (context);
+                output = null;
+                Idle.add ((owned) callback);
+                return true;
+            }
+
+            context.used_attr.check_unused (context);
+#endif
 
             output = generate_diagnostics (reporter);
 
