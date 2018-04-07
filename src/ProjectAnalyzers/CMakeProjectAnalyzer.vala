@@ -35,6 +35,7 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
     }
 
     private string cmake_build_root;
+    private bool initialization_failed = false;
 
     public CMakeAnalyzer (string root_uri) {
         Object (root_uri: root_uri);
@@ -60,17 +61,27 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
         try {
             folder.make_directory ();
         } catch (Error e) {
-            warning ("Failed to create temporary directory for CMake, build analysis will probably fail: %s", e.message);
+            initialization_failed = true;
+            warning ("Failed to create temporary directory for CMake, build target analysis will fail: %s", e.message);
             return;
         }
 
         var cmake = new SubprocessLauncher (SubprocessFlags.STDOUT_SILENCE);
         cmake.set_cwd (cmake_build_root);
-        var cmake_proc = cmake.spawnv ({ "cmake", source_root });
-        cmake_proc.wait ();
+        try {
+            var cmake_proc = cmake.spawnv ({ "cmake", source_root });
+            cmake_proc.wait ();
+        } catch (Error e) {
+            initialization_failed = true;
+            critical ("Failed to initialize CMake, build target analysis will fail: %s", e.message);
+        }
     }
 
     private async void scan_cmake_files () {
+        if (initialization_failed) {
+            return;
+        }
+
         var directory = File.new_for_path (cmake_build_root);
         yield find_cmake_build_file (directory, true);
     }
@@ -127,41 +138,45 @@ public class Vls.CMakeAnalyzer : Object, ProjectAnalyzer {
             return;
         }
 
-        while ((line = dis.read_line (null)) != null) {
-            if (line.contains ("valac ")) {
-                string[] parts = line.split (" ");
-                for (int i = parts.length - 1; i > 0; i--) {
-                    if (parts[i] == null) {
-                        continue;
-                    }
-
-                    if (parts[i].has_prefix ("-")) {
-                        MatchInfo info;
-                        if (package_regex.match (parts[i], 0, out info)) {
-                            deps.add (info.fetch (1));
+        try {
+            while ((line = dis.read_line (null)) != null) {
+                if (line.contains ("valac ")) {
+                    string[] parts = line.split (" ");
+                    for (int i = parts.length - 1; i > 0; i--) {
+                        if (parts[i] == null) {
+                            continue;
                         }
 
-                        all_source_files_parsed = true;
-                    }
+                        if (parts[i].has_prefix ("-")) {
+                            MatchInfo info;
+                            if (package_regex.match (parts[i], 0, out info)) {
+                                deps.add (info.fetch (1));
+                            }
 
-                    if (!all_source_files_parsed) {
-                        var source_file = File.new_for_path (parts[i]);
-                        var uri = source_file.get_uri ();
-                        if (source_file.query_exists ()) {
-                            build_files.add (uri);
+                            all_source_files_parsed = true;
                         }
 
-                        if (uri == pivot_file) {
-                            pivot_file_found = true;
+                        if (!all_source_files_parsed) {
+                            var source_file = File.new_for_path (parts[i]);
+                            var uri = source_file.get_uri ();
+                            if (source_file.query_exists ()) {
+                                build_files.add (uri);
+                            }
+
+                            if (uri == pivot_file) {
+                                pivot_file_found = true;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if (pivot_file_found) {
-            dependencies_updated (deps);
-            build_files_updated (build_files);
+            if (pivot_file_found) {
+                dependencies_updated (deps);
+                build_files_updated (build_files);
+            }
+        } catch (Error e) {
+            warning ("Error parsing build.make file: %s", e.message);
         }
     }
 }

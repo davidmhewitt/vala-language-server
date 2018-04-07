@@ -50,8 +50,13 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 		current_scope = null;
 
 		var result = stream.str;
-		var fix_blank_lines_regex = new Regex ("""\n\n(?=\s*})""");
-		result = fix_blank_lines_regex.replace (result, -1, 0, "\n");
+		try {
+			var fix_blank_lines_regex = new Regex ("""\n\n(?=\s*})""");
+			result = fix_blank_lines_regex.replace (result, -1, 0, "\n");
+		} catch (Error e) {
+			warning ("Failed to remove extra blank lines from formatted output: %s", e.message);
+		}
+
 		return result;
 	}
 
