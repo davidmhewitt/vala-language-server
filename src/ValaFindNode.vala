@@ -26,6 +26,25 @@ public class Vls.ValaFindNode : Vala.CodeVisitor {
         results = new Gee.ArrayList<Vala.CodeNode> ();
 
         visit_source_file (file);
+        results.sort ((a, b) => {
+            var a_ref = a.source_reference;
+            var a_weight = ((pos.line + 1) - a_ref.begin.line).abs ();
+            a_weight += ((pos.line + 1) - a_ref.end.line).abs ();
+            a_weight *= 80;
+
+            a_weight += ((pos.character) - a_ref.begin.column).abs ();
+            a_weight += ((pos.character) - a_ref.end.column).abs ();
+
+            var b_ref = b.source_reference;
+            var b_weight = ((pos.line + 1) - b_ref.begin.line).abs ();
+            b_weight += ((pos.line + 1) - b_ref.end.line).abs ();
+            b_weight *= 80;
+
+            b_weight += ((pos.character) - b_ref.begin.column).abs ();
+            b_weight += ((pos.character) - b_ref.end.column).abs ();
+
+            return a_weight - b_weight;
+        });
     }
 
     private bool match (Vala.CodeNode node) {

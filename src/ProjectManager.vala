@@ -230,20 +230,21 @@ public class Vls.ProjectManager : Object {
                     continue;
                 }
 
-                if (node is Vala.MethodCall) {
-                    var call = node as Vala.MethodCall;
+                if (node is Vala.MemberAccess) {
+                    var ma = (Vala.MemberAccess)node;
+                    debug (ma.to_string ());
 
-                    if (call.call is Vala.MemberAccess) {
-                        var ma = (Vala.MemberAccess)call.call;
-
-                        if (ma.symbol_reference != null) {
-                            var position = new LanguageServer.Types.Location () {
-                                uri = ma.symbol_reference.source_reference.file.filename,
-                                range = Utils.vala_ref_to_lsp_range (ma.symbol_reference.source_reference)
-                            };
-
-                            return position;
+                    if (ma.symbol_reference != null) {
+                        if (ma.symbol_reference.source_reference.file.file_type != Vala.SourceFileType.SOURCE) {
+                            continue;
                         }
+
+                        var position = new LanguageServer.Types.Location () {
+                            uri = ma.symbol_reference.source_reference.file.filename,
+                            range = Utils.vala_ref_to_lsp_range (ma.symbol_reference.source_reference)
+                        };
+
+                        return position;
                     }
                 }
             }
