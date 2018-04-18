@@ -20,7 +20,12 @@
 public class Vls.Linter : Object {
     public int run (string[] args) {
         string content;
-        FileUtils.get_contents (args[1], out content);
+        try {
+            FileUtils.get_contents (args[1], out content);
+        } catch (Error e) {
+            warning ("Unable to get contents of specified input file: %s", e.message);
+            return 1;
+        }
 
         var context = new Vala.CodeContext ();
 

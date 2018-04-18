@@ -58,22 +58,42 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
         meson_build_root = Path.build_filename (tmp_dir, "vls-build-" + new DateTime.now_local ().to_string ());
         var meson = new SubprocessLauncher (SubprocessFlags.STDOUT_SILENCE);
         meson.set_cwd (source_root);
-        var meson_proc = meson.spawnv ({ "meson", meson_build_root });
-        meson_proc.wait ();
+        try {
+            var meson_proc = meson.spawnv ({ "meson", meson_build_root });
+            meson_proc.wait ();
+        } catch (Error e) {
+            initialization_failed = true;
+            warning ("Meson initialization failed, build target analysis will not succeed: %s", e.message);
+        }
     }
 
     private async void introspect_target_files () {
+        if (initialization_failed) {
+            return;
+        }
+
         var meson = new SubprocessLauncher (SubprocessFlags.STDOUT_PIPE);
         meson.set_cwd (meson_build_root);
 
         Bytes output;
 
-        var proc = meson.spawnv ({ "meson", "introspect", "--targets", "."});
-        var pipe = proc.get_stdout_pipe ();
-        yield proc.communicate_async (null, null, out output, null);
+        try {
+            var proc = meson.spawnv ({ "meson", "introspect", "--targets", "."});
+            yield proc.communicate_async (null, null, out output, null);
+        } catch (Error e) {
+            warning ("Meson introspection failed, build target analysis will fail: %s", e.message);
+            return;
+        }
 
         var data = (string)output.get_data ();
-        var targets = Json.from_string (data);
+        Json.Node targets;
+        try {
+            targets = Json.from_string (data);
+        } catch (Error e) {
+            warning ("Error parsing JSON from meson targets: %s", e.message);
+            return;
+        }
+
         var target_list = new Gee.ArrayList<string> ();
         targets.get_array ().foreach_element ((arr, i, element) => {
             var type = element.get_object ().get_string_member ("type");
@@ -89,13 +109,25 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
         string? target_name = null;
 
         foreach (var target in target_list) {
-            proc = meson.spawnv ({ "meson", "introspect", "--target-files", target, "." });
-            pipe = proc.get_stdout_pipe ();
-            yield proc.communicate_async (null, null, out output, null);
+            try {
+                var proc = meson.spawnv ({ "meson", "introspect", "--target-files", target, "." });
+                yield proc.communicate_async (null, null, out output, null);
+            } catch (Error e) {
+                warning ("Meson introspection failed, build target analysis may fail: %s", e.message);
+                continue;
+            }
 
             data = (string)output.get_data ();
-            var files = Json.from_string (data);
-            current_file_list.clear ();
+            Json.Node files;
+
+            try {
+                files = Json.from_string (data);
+                current_file_list.clear ();
+            } catch (Error e) {
+                warning ("Error parsing JSON from meson target files: %s", e.message);
+                continue;
+            }
+
 
             files.get_array ().foreach_element ((arr, i, element) => {
                 var filename = element.get_string ();
@@ -144,14 +176,19 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
 
                 string line;
                 bool target_found = false;
-                while ((line = dis.read_line (null)) != null) {
-                    MatchInfo info;
-                    if (target_regex.match (line, 0, out info)) {
-                        if (info.fetch (1) == target_name) {
-                            target_found = true;
-                            break;
+                try {
+                    while ((line = dis.read_line (null)) != null) {
+                        MatchInfo info;
+                        if (target_regex.match (line, 0, out info)) {
+                            if (info.fetch (1) == target_name) {
+                                target_found = true;
+                                break;
+                            }
                         }
                     }
+                } catch (Error e) {
+                    warning ("Error reading compile_commands.json, bailing out: %s", e.message);
+                    return;
                 }
 
                 if (target_found) {

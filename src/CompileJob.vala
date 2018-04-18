@@ -71,8 +71,8 @@ public class Vls.CompileJob {
             foreach (var file in files.values) {
                 if (cancellable.is_cancelled ()) {
                     debug ("dropping compile");
-                    cleanup_context (context);
                     output = null;
+                    cleanup_context (context);
                     Idle.add ((owned) callback);
                     return true;
                 }
@@ -100,23 +100,23 @@ public class Vls.CompileJob {
                     context.root.add_using_directive (ns_ref);
                 }
 
-                context.add_source_file (file);
-
                 // clear all code nodes from file
                 file.get_nodes ().clear ();
+
+                context.add_source_file (file);
             }
 
             if (context.report.get_errors () > 0) {
-                cleanup_context (context);
                 output = generate_diagnostics (reporter);
+                cleanup_context (context);
                 Idle.add((owned) callback);
                 return true;
             }
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
-                cleanup_context (context);
                 output = null;
+                cleanup_context (context);
                 Idle.add ((owned) callback);
                 return true;
             }
@@ -127,16 +127,16 @@ public class Vls.CompileJob {
 
             if (context.report.get_errors () > 0) {
                 debug ("errors in parse");
-                cleanup_context (context);
                 output = generate_diagnostics (reporter);
+                cleanup_context (context);
                 Idle.add((owned) callback);
                 return true;
             }
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
-                cleanup_context (context);
                 output = null;
+                cleanup_context (context);
                 Idle.add ((owned) callback);
                 return true;
             }
@@ -145,16 +145,16 @@ public class Vls.CompileJob {
 
             if (context.report.get_errors () > 0) {
                 debug ("errors in symbol resolving");
-                cleanup_context (context);
                 output = generate_diagnostics (reporter);
+                cleanup_context (context);
                 Idle.add((owned) callback);
                 return true;
             }
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
-                cleanup_context (context);
                 output = null;
+                cleanup_context (context);
                 Idle.add ((owned) callback);
                 return true;
             }
@@ -163,16 +163,16 @@ public class Vls.CompileJob {
 
             if (context.report.get_errors () > 0) {
                 debug ("errors in analysis");
-                cleanup_context (context);
                 output = generate_diagnostics (reporter);
+                cleanup_context (context);
                 Idle.add((owned) callback);
                 return true;
             }
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
-                cleanup_context (context);
                 output = null;
+                cleanup_context (context);
                 Idle.add ((owned) callback);
                 return true;
             }
@@ -182,16 +182,16 @@ public class Vls.CompileJob {
 
             if (context.report.get_errors () > 0) {
                 debug ("errors in flow analysis");
-                cleanup_context (context);
                 output = generate_diagnostics (reporter);
+                cleanup_context (context);
                 Idle.add((owned) callback);
                 return true;
             }
 
             if (cancellable.is_cancelled ()) {
                 debug ("dropping compile");
-                cleanup_context (context);
                 output = null;
+                cleanup_context (context);
                 Idle.add ((owned) callback);
                 return true;
             }
