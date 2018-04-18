@@ -199,6 +199,7 @@ public class Vls.ProjectManager : Object {
             versions.unset (file);
         }
 
+        var temp_context = new Vala.CodeContext ();
         foreach (var file in new_files) {
             if (!versions.has_key (file)) {
                 debug ("adding %s", file);
@@ -212,7 +213,7 @@ public class Vls.ProjectManager : Object {
                 }
 
                 versions[file] = 1;
-                var vala_file = new Vala.SourceFile (new Vala.CodeContext (), Vala.SourceFileType.SOURCE, file, (string)contents);
+                var vala_file = new Vala.SourceFile (temp_context, Vala.SourceFileType.SOURCE, file, (string)contents);
                 files[file] = vala_file;
             }
         }
