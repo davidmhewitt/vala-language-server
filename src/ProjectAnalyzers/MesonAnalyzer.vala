@@ -35,6 +35,7 @@ public class Vls.MesonAnalyzer : Object, ProjectAnalyzer {
     }
 
     private string meson_build_root;
+    private bool initialization_failed = false;
 
     public MesonAnalyzer (string root_uri) {
         Object (root_uri: root_uri);
