@@ -782,24 +782,28 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 		if (prop.get_accessor != null) {
 			write_attributes (prop.get_accessor);
 
-			write_property_accessor_accessibility (prop.get_accessor);
-
-			if (prop.get_accessor.value_type.is_disposable ()) {
-				write_string (" owned");
-			}
-
 			if (prop.get_accessor.body != null) {
 				write_newline ();
 				indent += 1;
 				write_indent ();
-				write_string ("get");
-				write_code_block (prop.get_accessor.body);
+			} else {
+				write_string (" ");
+			}
+
+			write_property_accessor_accessibility (prop.get_accessor);
+
+			if (prop.get_accessor.value_type.is_disposable ()) {
+				write_string ("owned ");
+			}
+
+			write_string ("get");
+			write_code_block (prop.get_accessor.body);
+
+			if (prop.get_accessor.body != null) {
 				write_newline ();
 				indent--;
 				write_indent ();
 			} else {
-				write_string (" get");
-				write_code_block (prop.get_accessor.body);
 				write_string (" ");
 			}
 		}
@@ -807,19 +811,37 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 		if (prop.set_accessor != null) {
 			write_attributes (prop.set_accessor);
 
+			if (prop.set_accessor.body != null) {
+				write_newline ();
+				indent += 1;
+				write_indent ();
+			} else {
+				write_string (" ");
+			}
+
 			write_property_accessor_accessibility (prop.set_accessor);
 
 			if (prop.set_accessor.value_type.value_owned) {
-				write_string (" owned");
+				write_string ("owned ");
 			}
 
-			if (prop.set_accessor.writable) {
-				write_string (" set");
+			if (prop.set_accessor.writable && prop.set_accessor.construction) {
+				write_string ("construct set");
+			} else if (prop.set_accessor.writable) {
+				write_string ("set");
+			} else if (prop.set_accessor.construction) {
+				write_string ("construct");
 			}
-			if (prop.set_accessor.construction) {
-				write_string (" construct");
-			}
+
 			write_code_block (prop.set_accessor.body);
+
+			if (prop.set_accessor.body != null) {
+				write_newline ();
+				indent--;
+				write_indent ();
+			} else {
+				write_string (" ");
+			}
 		}
 
 		write_string ("}");
@@ -1814,11 +1836,11 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 
 	void write_property_accessor_accessibility (Vala.Symbol sym) {
 		if (sym.access == Vala.SymbolAccessibility.PROTECTED) {
-			write_string (" protected");
+			write_string ("protected ");
 		} else if (sym.access == Vala.SymbolAccessibility.INTERNAL) {
-			write_string (" internal");
+			write_string ("internal ");
 		} else if (sym.access == Vala.SymbolAccessibility.PRIVATE) {
-			write_string (" private");
+			write_string ("private ");
 		}
 	}
 
