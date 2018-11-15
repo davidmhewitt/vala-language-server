@@ -1560,7 +1560,44 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 
 	public override void visit_assignment (Vala.Assignment a) {
 		a.left.accept (this);
-		write_string (" = ");
+		switch (a.operator) {
+			case Vala.AssignmentOperator.SIMPLE:
+				write_string (" = ");
+				break;
+			case Vala.AssignmentOperator.BITWISE_OR:
+				write_string (" |= ");
+				break;
+			case Vala.AssignmentOperator.BITWISE_AND:
+				write_string (" &= ");
+				break;
+			case Vala.AssignmentOperator.BITWISE_XOR:
+				write_string (" ^= ");
+				break;
+			case Vala.AssignmentOperator.ADD:
+				write_string (" += ");
+				break;
+			case Vala.AssignmentOperator.SUB:
+				write_string (" -= ");
+				break;
+			case Vala.AssignmentOperator.MUL:
+				write_string (" *= ");
+				break;
+			case Vala.AssignmentOperator.DIV:
+				write_string (" /= ");
+				break;
+			case Vala.AssignmentOperator.PERCENT:
+				write_string (" %= ");
+				break;
+			case Vala.AssignmentOperator.SHIFT_LEFT:
+				write_string (" <<= ");
+				break;
+			case Vala.AssignmentOperator.SHIFT_RIGHT:
+				write_string (" >>= ");
+				break;
+			default:
+				break;
+		}
+
 		a.right.accept (this);
 	}
 
