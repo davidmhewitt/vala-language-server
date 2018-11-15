@@ -788,9 +788,22 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 				write_string (" owned");
 			}
 
-			write_string (" get");
-			write_code_block (prop.get_accessor.body);
+			if (prop.get_accessor.body != null) {
+				write_newline ();
+				indent += 1;
+				write_indent ();
+				write_string ("get");
+				write_code_block (prop.get_accessor.body);
+				write_newline ();
+				indent--;
+				write_indent ();
+			} else {
+				write_string (" get");
+				write_code_block (prop.get_accessor.body);
+				write_string (" ");
+			}
 		}
+
 		if (prop.set_accessor != null) {
 			write_attributes (prop.set_accessor);
 
@@ -808,7 +821,9 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 			}
 			write_code_block (prop.set_accessor.body);
 		}
-		write_string (" }");
+
+		write_string ("}");
+		write_newline ();
 		write_newline ();
 	}
 
@@ -1141,7 +1156,7 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 		foreach (var clause in stmt.get_catch_clauses ()) {
 			clause.accept (this);
 		}
-		
+
 		if (stmt.finally_body != null) {
 			write_string (" finally");
 			stmt.finally_body.accept (this);
