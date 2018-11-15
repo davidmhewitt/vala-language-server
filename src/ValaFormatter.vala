@@ -974,16 +974,7 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 		if (stmt.false_statement != null) {
 			var statements = stmt.false_statement.get_statements ();
 			if (statements.size == 1 && statements[0] is Vala.IfStatement) {
-				var sub_if = statements[0] as Vala.IfStatement;
-				write_string (" else if (");
-				sub_if.condition.accept (this);
-				write_string (")");
-				sub_if.true_statement.accept (this);
-
-				if (sub_if.false_statement != null) {
-					write_string (" else");
-					sub_if.false_statement.accept (this);
-				}
+				visit_else_if (statements[0] as Vala.IfStatement);
 			} else {
 				write_string (" else");
 				stmt.false_statement.accept (this);
@@ -992,6 +983,22 @@ public class Vls.ValaFormatter : Vala.CodeVisitor {
 
 		write_newline ();
 		write_newline ();
+	}
+
+	private void visit_else_if (Vala.IfStatement stmt) {
+		write_string (" else if (");
+		stmt.condition.accept (this);
+		write_string (")");
+		stmt.true_statement.accept (this);
+		if (stmt.false_statement != null) {
+			var statements = stmt.false_statement.get_statements ();
+			if (statements.size == 1 && statements[0] is Vala.IfStatement) {
+				visit_else_if (statements[0] as Vala.IfStatement);
+			} else {
+				write_string (" else");
+				stmt.false_statement.accept (this);
+			}
+		}
 	}
 
 	public override void visit_switch_statement (Vala.SwitchStatement stmt) {
